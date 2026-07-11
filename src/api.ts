@@ -115,10 +115,10 @@ export const api = {
     request<{ outcome: string; review_mode: string }>(`/pa-requests/${id}/evaluate`, {
       method: 'POST',
     }),
-  review: (id: string, action: string, reason_note?: string) =>
+  review: (id: string, action: string, reason_note?: string, new_outcome?: string) =>
     request<{ new_status: string }>(`/pa-requests/${id}/review`, {
       method: 'POST',
-      body: JSON.stringify({ action, reason_note }),
+      body: JSON.stringify({ action, reason_note, new_outcome }),
     }),
 }
 

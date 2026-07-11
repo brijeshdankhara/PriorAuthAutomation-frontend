@@ -3,11 +3,22 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api, getToken, type RequestDetail } from '../api'
 import { Header } from '../components/Header'
 
+const OUTCOMES = [
+  { value: 'ready_to_submit', label: 'Ready to submit' },
+  { value: 'gap_identified', label: 'Gap identified' },
+  { value: 'likely_not_coverable', label: 'Likely not coverable' },
+]
+
 export function RequestDetailPage() {
   const { requestId } = useParams()
   const [detail, setDetail] = useState<RequestDetail | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [status, setStatus] = useState('')
+  // Which review action the reviewer is composing: null | 'edit' | 'override'
+  const [mode, setMode] = useState<'edit' | 'override' | null>(null)
+  const [note, setNote] = useState('')
+  const [overrideOutcome, setOverrideOutcome] = useState('gap_identified')
   const navigate = useNavigate()
 
   const load = useCallback(() => {
@@ -26,16 +37,37 @@ export function RequestDetailPage() {
     load()
   }, [navigate, load])
 
-  async function review(action: string) {
+  async function runEvaluation() {
+    if (!requestId) return
+    setBusy(true)
+    setError('')
+    setStatus('Running evaluation (Textract + AI review — about a minute)…')
+    try {
+      await api.evaluate(requestId)
+      setStatus('')
+      load()
+    } catch (e) {
+      setError((e as Error).message)
+      setStatus('')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function submitReview(action: string) {
     if (!requestId) return
     setBusy(true)
     setError('')
     try {
-      const note =
-        action === 'approve'
-          ? 'Reviewed AI determinations and citations against the chart. Approving.'
-          : `Human ${action} of the AI determination.`
-      await api.review(requestId, action, note)
+      if (action === 'approve') {
+        await api.review(requestId, 'approve', 'Reviewed AI determinations and citations; accepting.')
+      } else if (action === 'edit') {
+        await api.review(requestId, 'edit', note)
+      } else {
+        await api.review(requestId, 'override', note, overrideOutcome)
+      }
+      setMode(null)
+      setNote('')
       load()
     } catch (e) {
       setError((e as Error).message)
@@ -44,7 +76,7 @@ export function RequestDetailPage() {
     }
   }
 
-  if (error) {
+  if (error && !detail) {
     return (
       <>
         <Header />
@@ -69,6 +101,8 @@ export function RequestDetailPage() {
   }
 
   const decided = ['approved', 'edited', 'overridden'].includes(detail.status)
+  const evaluated = detail.evaluations.length > 0
+  const reviewable = detail.status === 'pending_review'
 
   return (
     <>
@@ -83,20 +117,16 @@ export function RequestDetailPage() {
         </div>
 
         <div className="card">
-          <div className="row">
-            <div>
-              <div className="muted" style={{ fontSize: '0.8rem' }}>
-                {detail.payer} · {detail.diagnosis_code}
-              </div>
-              <div style={{ marginTop: '0.4rem' }}>
-                <span className={`badge ${detail.outcome ?? ''}`}>
-                  {detail.outcome ? detail.outcome.replace(/_/g, ' ') : 'not evaluated'}
-                </span>{' '}
-                <span className="muted" style={{ fontSize: '0.82rem' }}>
-                  review mode: {detail.review_mode ?? '—'} · status: {detail.status}
-                </span>
-              </div>
-            </div>
+          <div className="muted" style={{ fontSize: '0.8rem' }}>
+            {detail.payer} · {detail.diagnosis_code}
+          </div>
+          <div style={{ marginTop: '0.4rem' }}>
+            <span className={`badge ${detail.outcome ?? ''}`}>
+              {detail.outcome ? detail.outcome.replace(/_/g, ' ') : 'not evaluated'}
+            </span>{' '}
+            <span className="muted" style={{ fontSize: '0.82rem' }}>
+              review mode: {detail.review_mode ?? '—'} · status: {detail.status}
+            </span>
           </div>
           {detail.review_mode === 'full_manual' && (
             <p className="note">
@@ -106,56 +136,149 @@ export function RequestDetailPage() {
           )}
         </div>
 
-        <h2 style={{ fontSize: '1rem', margin: '1.4rem 0 0.7rem' }}>
-          AI criterion determinations
-        </h2>
-        {detail.evaluations.map((ev) => (
-          <div className="criterion" key={ev.id}>
-            <div className="cr-head">
-              <div className="cr-title">{ev.criterion}</div>
-              <span className={`badge ${ev.status}`}>{ev.status.replace(/_/g, ' ')}</span>
-            </div>
-            {ev.explanation && <div className="expl">{ev.explanation}</div>}
-            {ev.citation?.quote && (
-              <div className="cite">
-                “{ev.citation.quote}”
-                {ev.citation.page ? (
-                  <span className="muted"> — page {ev.citation.page}</span>
-                ) : null}
-              </div>
-            )}
-            <div className="conf" style={{ marginTop: '0.5rem' }}>
-              confidence {ev.confidence.toFixed(2)} (threshold{' '}
-              {ev.confidence_threshold.toFixed(2)}) · {ev.model_id}
-            </div>
-          </div>
-        ))}
-
-        <div className="card" style={{ marginTop: '1rem' }}>
-          {decided ? (
-            <p className="muted">
-              Human decision recorded: <strong>{detail.status}</strong>. Nothing the
-              AI produced is final until a person acts here.
+        {/* Stranded intake: has no AI determinations yet (e.g. an interrupted
+            upload). Offer to run the evaluation rather than leaving it dead. */}
+        {!evaluated && !decided && (
+          <div className="card">
+            <p className="muted" style={{ marginTop: 0 }}>
+              This request hasn’t been evaluated yet — no AI determinations exist
+              to review. Run the evaluation to process the uploaded chart.
             </p>
-          ) : (
-            <>
-              <p className="muted" style={{ marginTop: 0 }}>
-                Nothing above is final until you decide. The AI proposes; you dispose.
-              </p>
-              <div className="row">
-                <button disabled={busy} onClick={() => review('approve')}>
-                  Approve
-                </button>
-                <button className="secondary" disabled={busy} onClick={() => review('edit')}>
-                  Edit
-                </button>
-                <button className="secondary" disabled={busy} onClick={() => review('override')}>
-                  Override
-                </button>
+            <button disabled={busy} onClick={runEvaluation}>
+              {busy ? 'Working…' : 'Run evaluation'}
+            </button>
+            {status && <p className="spinner" style={{ marginTop: '0.8rem' }}>{status}</p>}
+            {error && <div className="error" style={{ marginTop: '0.8rem' }}>{error}</div>}
+          </div>
+        )}
+
+        {evaluated && (
+          <>
+            <h2 style={{ fontSize: '1rem', margin: '1.4rem 0 0.7rem' }}>
+              AI criterion determinations
+            </h2>
+            {detail.evaluations.map((ev) => (
+              <div className="criterion" key={ev.id}>
+                <div className="cr-head">
+                  <div className="cr-title">{ev.criterion}</div>
+                  <span className={`badge ${ev.status}`}>{ev.status.replace(/_/g, ' ')}</span>
+                </div>
+                {ev.explanation && <div className="expl">{ev.explanation}</div>}
+                {ev.citation?.quote && (
+                  <div className="cite">
+                    “{ev.citation.quote}”
+                    {ev.citation.page ? (
+                      <span className="muted"> — page {ev.citation.page}</span>
+                    ) : null}
+                  </div>
+                )}
+                <div className="conf" style={{ marginTop: '0.5rem' }}>
+                  confidence {ev.confidence.toFixed(2)} (threshold{' '}
+                  {ev.confidence_threshold.toFixed(2)}) · {ev.model_id}
+                </div>
               </div>
-            </>
-          )}
-        </div>
+            ))}
+
+            <div className="card" style={{ marginTop: '1rem' }}>
+              {decided ? (
+                <p className="muted" style={{ margin: 0 }}>
+                  Human decision recorded: <strong>{detail.status}</strong>. Nothing the
+                  AI produced is final until a person acts here.
+                </p>
+              ) : reviewable && mode === null ? (
+                <>
+                  <p className="muted" style={{ marginTop: 0 }}>
+                    Nothing above is final until you decide. The AI proposes; you dispose.
+                  </p>
+                  <div className="row">
+                    <button disabled={busy} onClick={() => submitReview('approve')}>
+                      Approve
+                    </button>
+                    <button className="secondary" disabled={busy} onClick={() => setMode('edit')}>
+                      Edit
+                    </button>
+                    <button
+                      className="secondary"
+                      disabled={busy}
+                      onClick={() => setMode('override')}
+                    >
+                      Override
+                    </button>
+                  </div>
+                  <p className="note">
+                    Approve = accept as-is · Edit = accept with a correction note ·
+                    Override = set a different outcome with a reason.
+                  </p>
+                </>
+              ) : reviewable && mode === 'edit' ? (
+                <>
+                  <p className="muted" style={{ marginTop: 0 }}>
+                    <strong>Edit</strong> — accept the outcome but record a correction
+                    note. The AI’s determination stands; your note is appended.
+                  </p>
+                  <label>Correction note (required)</label>
+                  <textarea
+                    rows={3}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="e.g. Citation on criterion 3 should reference the 2026-05-02 panel."
+                    style={{ width: '100%' }}
+                  />
+                  <div className="row" style={{ marginTop: '0.7rem' }}>
+                    <button disabled={busy || !note.trim()} onClick={() => submitReview('edit')}>
+                      Save edit
+                    </button>
+                    <button className="ghost" disabled={busy} onClick={() => setMode(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : reviewable && mode === 'override' ? (
+                <>
+                  <p className="muted" style={{ marginTop: 0 }}>
+                    <strong>Override</strong> — reject the AI’s outcome and set your own.
+                    This changes the case determination.
+                  </p>
+                  <label>New outcome</label>
+                  <select
+                    value={overrideOutcome}
+                    onChange={(e) => setOverrideOutcome(e.target.value)}
+                  >
+                    {OUTCOMES.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                  <label>Reason (required)</label>
+                  <textarea
+                    rows={3}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Why the AI's outcome is wrong and yours is correct."
+                    style={{ width: '100%' }}
+                  />
+                  <div className="row" style={{ marginTop: '0.7rem' }}>
+                    <button
+                      disabled={busy || !note.trim()}
+                      onClick={() => submitReview('override')}
+                    >
+                      Override outcome
+                    </button>
+                    <button className="ghost" disabled={busy} onClick={() => setMode(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="muted" style={{ margin: 0 }}>
+                  Status is “{detail.status}” — not open for review.
+                </p>
+              )}
+              {error && <div className="error" style={{ marginTop: '0.8rem' }}>{error}</div>}
+            </div>
+          </>
+        )}
       </div>
     </>
   )
