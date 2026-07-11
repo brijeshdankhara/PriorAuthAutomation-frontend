@@ -1,6 +1,230 @@
-section {
-  max-width: 640px;
-  margin: 4rem auto;
+:root {
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --border: #e2e6ea;
+  --text: #1c2530;
+  --muted: #6b7684;
+  --accent: #2563eb;
+  --accent-fg: #ffffff;
+  --met: #128a54;
+  --met-bg: #e6f5ee;
+  --not-met: #b42318;
+  --not-met-bg: #fdecea;
+  --indeterminate: #b25b00;
+  --indeterminate-bg: #fdf1e3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.app-header h1 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.app-header .muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.container {
+  max-width: 860px;
+  margin: 2rem auto;
   padding: 0 1.5rem;
-  font-family: system-ui, sans-serif;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.4rem;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin: 0 0 1rem;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0.75rem 0 0.3rem;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 0.95rem;
+  background: #fff;
+  color: var(--text);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 7px;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+button.secondary {
+  background: #eef1f5;
+  color: var(--text);
+}
+button.ghost {
+  background: transparent;
+  color: var(--accent);
+  padding: 0.4rem 0.6rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.spacer {
+  flex: 1;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  text-align: left;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+tr.clickable:hover {
+  background: #fafbfc;
+  cursor: pointer;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge.met {
+  color: var(--met);
+  background: var(--met-bg);
+}
+.badge.not_met {
+  color: var(--not-met);
+  background: var(--not-met-bg);
+}
+.badge.indeterminate {
+  color: var(--indeterminate);
+  background: var(--indeterminate-bg);
+}
+.badge.ready_to_submit {
+  color: var(--met);
+  background: var(--met-bg);
+}
+.badge.gap_identified {
+  color: var(--indeterminate);
+  background: var(--indeterminate-bg);
+}
+.badge.likely_not_coverable {
+  color: var(--not-met);
+  background: var(--not-met-bg);
+}
+
+.criterion {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.7rem;
+}
+.criterion .cr-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.criterion .cr-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.criterion .cite {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  background: #f6f8fb;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+.criterion .expl {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.criterion .conf {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--muted);
+}
+.error {
+  color: var(--not-met);
+  background: var(--not-met-bg);
+  padding: 0.6rem 0.8rem;
+  border-radius: 7px;
+  font-size: 0.88rem;
+}
+.note {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+.spinner {
+  font-size: 0.9rem;
+  color: var(--muted);
 }
