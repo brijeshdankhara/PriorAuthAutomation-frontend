@@ -2,7 +2,7 @@
 
 > Part of a 4-repo portfolio project: [infra](https://github.com/brijeshdankhara/PriorAuthAutomation-infra) · [backend](https://github.com/brijeshdankhara/PriorAuthAutomation-backend) · **frontend** (this repo) · [docs](https://github.com/brijeshdankhara/PriorAuthAutomation-docs)
 >
-> This is a portfolio/demo project (synthetic data only, no real patients or providers). Live demo: `www.brijeshdankhara.com/auto-pa-test`.
+> This is a portfolio/demo project (synthetic data only, no real patients or providers). Live demo: `autopa.brijeshdankhara.com` (`brijeshdankhara.com/auto-pa-test` redirects there).
 
 React + TypeScript + Vite SPA for the Prior Authorization Automation Platform. See [docs/ARCHITECTURE.md](https://github.com/brijeshdankhara/PriorAuthAutomation-docs/blob/main/ARCHITECTURE.md) for the full design.
 
@@ -33,10 +33,10 @@ Local dev needs `.env.local` (gitignored) with `VITE_COGNITO_USER_POOL_ID` / `VI
 npm run build    # tsc -b && vite build
 ```
 
-Hosted on **Vercel**, at `www.brijeshdankhara.com/auto-pa-test`:
+Hosted on **Vercel**, at its own subdomain, `autopa.brijeshdankhara.com` — not a path under the main domain. Squarespace (which hosts `brijeshdankhara.com`) can only route by (sub)domain via DNS, not by path, so there's no way to have Squarespace serve the root site while transparently proxying just `/auto-pa-test` to Vercel. Instead, Squarespace has a plain URL redirect from `/auto-pa-test` to this subdomain — the address bar changes after landing, but everything downstream (SPA routing, deep links, the browser back button) works correctly because the app is genuinely being served from its own domain, not iframed or proxied.
 
-- `vite.config.ts` sets `base: '/auto-pa-test/'` only for the production build (`command === 'build'`) — local dev still serves from `/`. `BrowserRouter`'s `basename` follows Vite's `base` automatically via `import.meta.env.BASE_URL`.
-- `.env.production` holds Prod's Cognito IDs and `VITE_API_BASE=/auto-pa-test/api` — none of these are secrets (a Cognito user-pool/client ID is meant to be visible in client-side JS; the actual security boundary is Cognito's own SRP auth and the API's own authorization checks).
-- `vercel.json` rewrites `/auto-pa-test/api/*` to the backend's CloudFront domain (same-origin from the browser's point of view, so no CORS is needed) and falls back every other `/auto-pa-test/*` path to `index.html` for client-side routing. Vercel serves real static assets before applying rewrites, so this doesn't interfere with the built JS/CSS.
+- `vite.config.ts` uses the default `base: '/'` — the app is served from the subdomain's root.
+- `.env.production` holds Prod's Cognito IDs and `VITE_API_BASE=/api` — none of these are secrets (a Cognito user-pool/client ID is meant to be visible in client-side JS; the actual security boundary is Cognito's own SRP auth and the API's own authorization checks).
+- `vercel.json` rewrites `/api/*` to the backend's CloudFront domain (same-origin from the browser's point of view, so no CORS is needed) and falls back every other path to `index.html` for client-side routing. Vercel serves real static assets before applying rewrites, so this doesn't interfere with the built JS/CSS.
 
-Deploying: connect this repo to a Vercel project (framework preset: Vite) — Vercel builds and deploys on every push automatically from there.
+Deploying: connect this repo to a Vercel project (framework preset: Vite), then add `autopa.brijeshdankhara.com` as a custom domain in the project's settings — Vercel gives you a CNAME target to add in Squarespace's DNS settings. Vercel then builds and deploys on every push automatically.

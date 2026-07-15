@@ -1,12 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/auto-pa-test/api/(.*)",
+      "source": "/api/(.*)",
       "destination": "https://d250yee1c95v7j.cloudfront.net/$1"
     },
     {
-      "source": "/auto-pa-test/(.*)",
-      "destination": "/auto-pa-test/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
