@@ -8,6 +8,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [guestBusy, setGuestBusy] = useState(false)
   const navigate = useNavigate()
 
   async function submit(e: React.FormEvent) {
@@ -26,7 +27,7 @@ export function LoginPage() {
   }
 
   async function continueAsGuest() {
-    setBusy(true)
+    setGuestBusy(true)
     setError('')
     try {
       const { access_token } = await api.guestToken()
@@ -35,7 +36,7 @@ export function LoginPage() {
     } catch (err) {
       setError((err as Error).message)
     } finally {
-      setBusy(false)
+      setGuestBusy(false)
     }
   }
 
@@ -66,7 +67,7 @@ export function LoginPage() {
             autoComplete="current-password"
           />
           <div className="login-actions">
-            <button type="submit" disabled={busy}>
+            <button type="submit" disabled={busy || guestBusy}>
               {busy ? 'Signing in…' : 'Sign in'}
             </button>
           </div>
@@ -77,9 +78,14 @@ export function LoginPage() {
           <span>or</span>
         </div>
 
-        <button className="secondary" style={{ width: '100%' }} disabled={busy} onClick={continueAsGuest}>
-          Continue as guest — view a live read-only demo
+        <button className="secondary" style={{ width: '100%' }} disabled={busy || guestBusy} onClick={continueAsGuest}>
+          {guestBusy ? 'Loading demo…' : 'Continue as guest — view a live read-only demo'}
         </button>
+        {guestBusy && (
+          <p className="note" style={{ textAlign: 'center', marginTop: '0.6rem' }}>
+            Waking up the demo environment — this can take up to a minute if it's been idle.
+          </p>
+        )}
         <p className="note" style={{ textAlign: 'center' }}>
           No account needed. You'll see real AI-evaluated cases; creating or changing anything
           requires a real sign-in.

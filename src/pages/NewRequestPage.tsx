@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, getToken, isGuest, uploadToS3, type Reference } from '../api'
 import { Header } from '../components/Header'
+import { LoadingIndicator } from '../components/LoadingIndicator'
 
 export function NewRequestPage() {
   const [ref, setRef] = useState<Reference | null>(null)
@@ -88,7 +89,7 @@ export function NewRequestPage() {
 
         <div className="card">
           {!ref ? (
-            <p className="spinner">Loading…</p>
+            <LoadingIndicator label="Loading…" />
           ) : (
             <form onSubmit={submit}>
               <label>Drug</label>

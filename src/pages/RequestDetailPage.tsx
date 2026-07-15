@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api, getToken, isGuest, type RequestDetail } from '../api'
 import { Header } from '../components/Header'
+import { LoadingIndicator } from '../components/LoadingIndicator'
 
 const OUTCOMES = [
   { value: 'ready_to_submit', label: 'Ready to submit' },
@@ -117,7 +118,7 @@ export function RequestDetailPage() {
       <>
         <Header />
         <div className="container">
-          <p className="spinner">Loading…</p>
+          <LoadingIndicator label="Loading request…" />
         </div>
       </>
     )

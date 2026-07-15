@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, getToken, isGuest, type QueueItem } from '../api'
 import { Header } from '../components/Header'
+import { LoadingIndicator } from '../components/LoadingIndicator'
 
 function outcomeBadge(outcome: string | null) {
   if (!outcome) return <span className="muted">—</span>
@@ -39,7 +40,7 @@ export function WorkQueuePage() {
           {!isGuest() && <button onClick={() => navigate('/new')}>+ New PA request</button>}
         </div>
 
-        {loading && <p className="spinner">Loading…</p>}
+        {loading && <LoadingIndicator label="Loading queue…" />}
         {error && <div className="error">{error}</div>}
 
         {!loading && !error && (

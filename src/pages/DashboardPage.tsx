@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, getToken, isGuest, type DashboardData } from '../api'
 import { Header } from '../components/Header'
+import { LoadingIndicator } from '../components/LoadingIndicator'
 
 function DemoExplainer() {
   const [dismissed, setDismissed] = useState(false)
@@ -99,7 +100,7 @@ export function DashboardPage() {
       <>
         <Header />
         <div className="container">
-          <p className="spinner">Loading…</p>
+          <LoadingIndicator label="Loading dashboard…" />
         </div>
       </>
     )
