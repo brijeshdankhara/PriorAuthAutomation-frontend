@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, getToken, uploadToS3, type Reference } from '../api'
+import { api, getToken, isGuest, uploadToS3, type Reference } from '../api'
 import { Header } from '../components/Header'
 
 export function NewRequestPage() {
@@ -17,6 +17,10 @@ export function NewRequestPage() {
   useEffect(() => {
     if (!getToken()) {
       navigate('/')
+      return
+    }
+    if (isGuest()) {
+      navigate('/dashboard')
       return
     }
     api

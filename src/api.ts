@@ -7,12 +7,25 @@ export function getToken(): string | null {
   return localStorage.getItem('pa_token')
 }
 
-export function setToken(token: string): void {
+export function setToken(token: string, guest = false): void {
   localStorage.setItem('pa_token', token)
+  if (guest) {
+    localStorage.setItem('pa_token_is_guest', '1')
+  } else {
+    localStorage.removeItem('pa_token_is_guest')
+  }
 }
 
 export function clearToken(): void {
   localStorage.removeItem('pa_token')
+  localStorage.removeItem('pa_token_is_guest')
+}
+
+// Client-side hint only, purely for UI (hiding mutating buttons). The real
+// enforcement is server-side -- every mutating endpoint rejects a guest
+// token outright regardless of what the UI shows.
+export function isGuest(): boolean {
+  return localStorage.getItem('pa_token_is_guest') === '1'
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -92,12 +105,35 @@ export interface RequestDetail {
   evaluations: Evaluation[]
 }
 
+export interface GapReason {
+  description: string
+  status: string
+  c: number
+}
+
+export interface OperatorMetrics {
+  total_pa_requests: number
+  human_override_rate: number | null
+  reviewed_count: number
+  by_model: { model_id: string; count: number; avg_confidence: number }[]
+  low_confidence_criteria: { description: string; count: number; avg_confidence: number }[]
+}
+
+export interface DashboardData {
+  by_status: Record<string, number>
+  by_outcome: Record<string, number>
+  by_review_mode: Record<string, number>
+  by_payer: Record<string, number>
+  avg_ai_turnaround_minutes: number | null
+  ai_turnaround_sample_size: number
+  avg_human_review_minutes: number | null
+  human_review_sample_size: number
+  gap_denial_reasons: GapReason[]
+  operator?: OperatorMetrics
+}
+
 export const api = {
-  devLogin: (email: string, password: string) =>
-    request<{ access_token: string }>('/auth/dev-login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    }),
+  guestToken: () => request<{ access_token: string }>('/auth/guest-token', { method: 'POST' }),
   reference: () => request<Reference>('/reference'),
   queue: () => request<QueueItem[]>('/pa-requests'),
   detail: (id: string) => request<RequestDetail>(`/pa-requests/${id}`),
@@ -112,7 +148,7 @@ export const api = {
       { method: 'POST', body: JSON.stringify({ filename, mime_type }) },
     ),
   evaluate: (id: string) =>
-    request<{ outcome: string; review_mode: string }>(`/pa-requests/${id}/evaluate`, {
+    request<{ status: string }>(`/pa-requests/${id}/evaluate`, {
       method: 'POST',
     }),
   review: (id: string, action: string, reason_note?: string, new_outcome?: string) =>
@@ -120,6 +156,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ action, reason_note, new_outcome }),
     }),
+  dashboard: () => request<DashboardData>('/dashboard'),
 }
 
 // Upload bytes straight to S3 via the presigned PUT URL (not through our API).

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, getToken, type QueueItem } from '../api'
+import { api, getToken, isGuest, type QueueItem } from '../api'
 import { Header } from '../components/Header'
 
 function outcomeBadge(outcome: string | null) {
@@ -33,7 +33,10 @@ export function WorkQueuePage() {
         <div className="row" style={{ marginBottom: '1rem' }}>
           <h2 style={{ margin: 0 }}>Work Queue</h2>
           <div className="spacer" />
-          <button onClick={() => navigate('/new')}>+ New PA request</button>
+          <button className="ghost" onClick={() => navigate('/dashboard')}>
+            Dashboard
+          </button>
+          {!isGuest() && <button onClick={() => navigate('/new')}>+ New PA request</button>}
         </div>
 
         {loading && <p className="spinner">Loading…</p>}

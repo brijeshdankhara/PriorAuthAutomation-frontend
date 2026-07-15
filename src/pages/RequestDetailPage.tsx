@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api, getToken, type RequestDetail } from '../api'
+import { api, getToken, isGuest, type RequestDetail } from '../api'
 import { Header } from '../components/Header'
 
 const OUTCOMES = [
@@ -8,6 +8,13 @@ const OUTCOMES = [
   { value: 'gap_identified', label: 'Gap identified' },
   { value: 'likely_not_coverable', label: 'Likely not coverable' },
 ]
+
+const EVALUATION_POLL_INTERVAL_MS = 3000
+const EVALUATION_POLL_TIMEOUT_MS = 3 * 60 * 1000
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 export function RequestDetailPage() {
   const { requestId } = useParams()
@@ -43,9 +50,25 @@ export function RequestDetailPage() {
     setError('')
     setStatus('Running evaluation (Textract + AI review — about a minute)…')
     try {
+      // The endpoint only triggers the pipeline and returns immediately --
+      // it doesn't block behind the scenes anymore (a long-held request
+      // doesn't survive being deployed behind a real edge/proxy), so we
+      // poll for the result instead.
       await api.evaluate(requestId)
+      const deadline = Date.now() + EVALUATION_POLL_TIMEOUT_MS
+      let seenEvaluating = false
+      while (Date.now() < deadline) {
+        const d = await api.detail(requestId)
+        if (d.status === 'evaluating') seenEvaluating = true
+        if (seenEvaluating && d.status === 'pending_review') {
+          setDetail(d)
+          setStatus('')
+          return
+        }
+        await sleep(EVALUATION_POLL_INTERVAL_MS)
+      }
+      setError('Evaluation is taking longer than expected — refresh in a bit to check on it.')
       setStatus('')
-      load()
     } catch (e) {
       setError((e as Error).message)
       setStatus('')
@@ -138,7 +161,7 @@ export function RequestDetailPage() {
 
         {/* Stranded intake: has no AI determinations yet (e.g. an interrupted
             upload). Offer to run the evaluation rather than leaving it dead. */}
-        {!evaluated && !decided && (
+        {!evaluated && !decided && !isGuest() && (
           <div className="card">
             <p className="muted" style={{ marginTop: 0 }}>
               This request hasn’t been evaluated yet — no AI determinations exist
@@ -149,6 +172,13 @@ export function RequestDetailPage() {
             </button>
             {status && <p className="spinner" style={{ marginTop: '0.8rem' }}>{status}</p>}
             {error && <div className="error" style={{ marginTop: '0.8rem' }}>{error}</div>}
+          </div>
+        )}
+        {!evaluated && !decided && isGuest() && (
+          <div className="card">
+            <p className="muted" style={{ margin: 0 }}>
+              This request hasn’t been evaluated yet. Sign in to run the evaluation.
+            </p>
           </div>
         )}
 
@@ -184,6 +214,10 @@ export function RequestDetailPage() {
                 <p className="muted" style={{ margin: 0 }}>
                   Human decision recorded: <strong>{detail.status}</strong>. Nothing the
                   AI produced is final until a person acts here.
+                </p>
+              ) : reviewable && isGuest() ? (
+                <p className="muted" style={{ margin: 0 }}>
+                  This case is awaiting human review. Sign in to approve, edit, or override it.
                 </p>
               ) : reviewable && mode === null ? (
                 <>

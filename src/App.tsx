@@ -3,6 +3,7 @@ import { LoginPage } from './pages/LoginPage'
 import { WorkQueuePage } from './pages/WorkQueuePage'
 import { NewRequestPage } from './pages/NewRequestPage'
 import { RequestDetailPage } from './pages/RequestDetailPage'
+import { DashboardPage } from './pages/DashboardPage'
 import './App.css'
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
       <Route path="/queue" element={<WorkQueuePage />} />
       <Route path="/new" element={<NewRequestPage />} />
       <Route path="/requests/:requestId" element={<RequestDetailPage />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
     </Routes>
   )
 }

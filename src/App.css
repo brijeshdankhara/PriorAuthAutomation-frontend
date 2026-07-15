@@ -209,6 +209,21 @@ tr.clickable:hover {
   white-space: nowrap;
 }
 
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
 .muted {
   color: var(--muted);
 }
@@ -227,4 +242,91 @@ tr.clickable:hover {
 .spinner {
   font-size: 0.9rem;
   color: var(--muted);
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #eef2ff 0%, var(--bg) 55%);
+  padding: 1.5rem;
+}
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 2rem 2rem 1.6rem;
+  box-shadow: 0 20px 45px -20px rgba(37, 99, 235, 0.25);
+}
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1.6rem;
+}
+.login-mark {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+}
+.login-title {
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.3;
+}
+.login-subtitle {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+.login-actions {
+  margin-top: 1rem;
+}
+.login-actions button {
+  width: 100%;
+}
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 1.4rem 0 1rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.demo-banner {
+  background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+  border: 1px solid #dde3fb;
+  border-radius: 10px;
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1rem;
+}
+.demo-banner h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+.demo-banner p {
+  margin: 0.4rem 0 0;
+  font-size: 0.87rem;
+  color: var(--text);
+  line-height: 1.5;
 }
