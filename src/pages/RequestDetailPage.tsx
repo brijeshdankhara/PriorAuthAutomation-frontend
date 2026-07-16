@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api, getToken, isGuest, type RequestDetail } from '../api'
 import { Header } from '../components/Header'
 import { LoadingIndicator } from '../components/LoadingIndicator'
+import { label, CRITERION_STATUS_LABELS, OUTCOME_LABELS, REVIEW_MODE_LABELS, STATUS_LABELS } from '../labels'
 
 const OUTCOMES = [
   { value: 'ready_to_submit', label: 'Ready to submit' },
@@ -146,10 +147,11 @@ export function RequestDetailPage() {
           </div>
           <div style={{ marginTop: '0.4rem' }}>
             <span className={`badge ${detail.outcome ?? ''}`}>
-              {detail.outcome ? detail.outcome.replace(/_/g, ' ') : 'not evaluated'}
+              {detail.outcome ? label(OUTCOME_LABELS, detail.outcome) : 'Not evaluated yet'}
             </span>{' '}
             <span className="muted" style={{ fontSize: '0.82rem' }}>
-              review mode: {detail.review_mode ?? '—'} · status: {detail.status}
+              {detail.review_mode ? label(REVIEW_MODE_LABELS, detail.review_mode) : '—'} ·{' '}
+              {label(STATUS_LABELS, detail.status)}
             </span>
           </div>
           {detail.review_mode === 'full_manual' && (
@@ -192,7 +194,7 @@ export function RequestDetailPage() {
               <div className="criterion" key={ev.id}>
                 <div className="cr-head">
                   <div className="cr-title">{ev.criterion}</div>
-                  <span className={`badge ${ev.status}`}>{ev.status.replace(/_/g, ' ')}</span>
+                  <span className={`badge ${ev.status}`}>{label(CRITERION_STATUS_LABELS, ev.status)}</span>
                 </div>
                 {ev.explanation && <div className="expl">{ev.explanation}</div>}
                 {ev.citation?.quote && (

@@ -3,40 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { api, getToken, isGuest, type DashboardData } from '../api'
 import { Header } from '../components/Header'
 import { LoadingIndicator } from '../components/LoadingIndicator'
-
-function DemoExplainer() {
-  const [dismissed, setDismissed] = useState(false)
-  if (dismissed) return null
-  return (
-    <div className="demo-banner">
-      <div className="row" style={{ alignItems: 'flex-start' }}>
-        <h3 style={{ margin: 0 }}>You're viewing a live read-only demo</h3>
-        <div className="spacer" />
-        <button className="ghost" style={{ padding: '0.1rem 0.4rem' }} onClick={() => setDismissed(true)}>
-          ✕
-        </button>
-      </div>
-      <p>
-        <strong>Prior authorization</strong> is the process insurers require before covering
-        certain drugs — proving a patient meets specific coverage rules. Today that's done by
-        hand: a staff member reads a dense policy PDF, checks it against the patient's chart,
-        and submits the request — slow and easy to get wrong.
-      </p>
-      <p>
-        This app automates that end to end: it extracts the chart, looks up the exact coverage
-        rule for this drug/plan/diagnosis, and has an AI agent judge each requirement against the
-        evidence — always with a citation back to the specific sentence it relied on. Anything
-        the AI is unsure about is automatically routed to a human. Nothing the AI produces is
-        ever final until a person approves it — you can see that human-in-the-loop review step
-        on any case below.
-      </p>
-      <p className="muted">
-        All patient data shown here is synthetic. Everything else — the AI reasoning, citations,
-        and coverage rules — is real.
-      </p>
-    </div>
-  )
-}
+import { GuestTour } from '../components/GuestTour'
+import { label, OUTCOME_LABELS, REVIEW_MODE_LABELS, STATUS_LABELS, CRITERION_STATUS_LABELS } from '../labels'
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
@@ -47,7 +15,15 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   )
 }
 
-function CountTable({ title, counts }: { title: string; counts: Record<string, number> }) {
+function CountTable({
+  title,
+  counts,
+  labelMap,
+}: {
+  title: string
+  counts: Record<string, number>
+  labelMap?: Record<string, string>
+}) {
   const entries = Object.entries(counts)
   return (
     <div className="card">
@@ -61,7 +37,7 @@ function CountTable({ title, counts }: { title: string; counts: Record<string, n
           <tbody>
             {entries.map(([k, v]) => (
               <tr key={k}>
-                <td>{k.replace(/_/g, ' ')}</td>
+                <td>{labelMap ? label(labelMap, k) : k}</td>
                 <td style={{ textAlign: 'right', fontWeight: 600 }}>{v}</td>
               </tr>
             ))}
@@ -118,31 +94,34 @@ export function DashboardPage() {
           </button>
         </div>
 
-        {isGuest() && <DemoExplainer />}
+        {isGuest() && <GuestTour />}
 
         <div className="card">
-          <h2 style={{ fontSize: '0.95rem' }}>Practice metrics</h2>
+          <h2 style={{ fontSize: '0.95rem' }}>Time saved</h2>
+          <p className="note" style={{ marginTop: 0 }}>
+            How fast the AI reviews a case, versus how long the follow-up staff check takes.
+          </p>
           <div className="stat-grid">
             <Stat
-              label="Median AI turnaround"
+              label="AI review time"
               value={data.avg_ai_turnaround_minutes != null ? `${data.avg_ai_turnaround_minutes} min` : '—'}
             />
             <Stat
-              label="Median human review time"
+              label="Staff review time"
               value={data.avg_human_review_minutes != null ? `${data.avg_human_review_minutes} min` : '—'}
             />
-            <Stat label="Requests evaluated" value={data.ai_turnaround_sample_size} />
-            <Stat label="Requests reviewed" value={data.human_review_sample_size} />
+            <Stat label="Cases AI has reviewed" value={data.ai_turnaround_sample_size} />
+            <Stat label="Cases staff has signed off on" value={data.human_review_sample_size} />
           </div>
         </div>
 
-        <CountTable title="Volume by status" counts={data.by_status} />
-        <CountTable title="Volume by outcome" counts={data.by_outcome} />
-        <CountTable title="Volume by review mode" counts={data.by_review_mode} />
-        <CountTable title="Volume by payer" counts={data.by_payer} />
+        <CountTable title="Cases by status" counts={data.by_status} labelMap={STATUS_LABELS} />
+        <CountTable title="Cases by outcome" counts={data.by_outcome} labelMap={OUTCOME_LABELS} />
+        <CountTable title="Cases by review type" counts={data.by_review_mode} labelMap={REVIEW_MODE_LABELS} />
+        <CountTable title="Cases by payer" counts={data.by_payer} />
 
         <div className="card">
-          <h2 style={{ fontSize: '0.95rem' }}>Top gap / denial reasons</h2>
+          <h2 style={{ fontSize: '0.95rem' }}>Most common reasons a case isn’t ready</h2>
           {data.gap_denial_reasons.length === 0 ? (
             <p className="muted" style={{ margin: 0 }}>
               No gap or denial reasons recorded yet.
@@ -151,7 +130,7 @@ export function DashboardPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Criterion</th>
+                  <th>Requirement</th>
                   <th>Result</th>
                   <th>Count</th>
                 </tr>
@@ -161,7 +140,7 @@ export function DashboardPage() {
                   <tr key={i}>
                     <td>{r.description}</td>
                     <td>
-                      <span className={`badge ${r.status}`}>{r.status.replace(/_/g, ' ')}</span>
+                      <span className={`badge ${r.status}`}>{label(CRITERION_STATUS_LABELS, r.status)}</span>
                     </td>
                     <td>{r.c}</td>
                   </tr>

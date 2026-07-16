@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { api, getToken, isGuest, type QueueItem } from '../api'
 import { Header } from '../components/Header'
 import { LoadingIndicator } from '../components/LoadingIndicator'
+import { label, OUTCOME_LABELS, STATUS_LABELS } from '../labels'
 
 function outcomeBadge(outcome: string | null) {
   if (!outcome) return <span className="muted">—</span>
-  return <span className={`badge ${outcome}`}>{outcome.replace(/_/g, ' ')}</span>
+  return <span className={`badge ${outcome}`}>{label(OUTCOME_LABELS, outcome)}</span>
 }
 
 export function WorkQueuePage() {
@@ -69,7 +70,7 @@ export function WorkQueuePage() {
                     >
                       <td>{it.drug_name}</td>
                       <td>{it.payer}</td>
-                      <td>{it.status.replace(/_/g, ' ')}</td>
+                      <td>{label(STATUS_LABELS, it.status)}</td>
                       <td>{outcomeBadge(it.outcome)}</td>
                       <td className="muted">{it.created_at.slice(0, 16)}</td>
                     </tr>
